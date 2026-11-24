@@ -1,8 +1,8 @@
 # Smart DMX
 
-Smart DMX is ESP32 firmware that exposes a three-channel RGB DMX fixture to Homey as a Matter over Wi-Fi **Extended Color Light**. It uses Homey's built-in Matter support. Homey can control power, brightness, hue, saturation and color temperature. Color temperature is simulated with RGB mixing.
+Smart DMX is ESP32 firmware that exposes a three-channel RGB DMX fixture as a Matter over Wi-Fi **Extended Color Light**. A compatible Matter controller can control power, brightness, hue, saturation and color temperature. The firmware approximates color temperature using RGB mixing. The reference setup was tested with Homey Self-Hosted Server.
 
-**Signal path** · Homey → Matter over Wi-Fi → ESP32 → RS-485 transmitter → DMX fixture
+**Signal path** · Matter controller → Matter over Wi-Fi → ESP32 → RS-485 transmitter → DMX fixture
 
 The target setup is an ESP32 DevKit V1 with 4 MB flash and an ADJ 64P LED PRO in three-channel RGB mode. The default firmware runs in dry-run mode and logs the RGB output over USB. You can pair the ESP32 and test the controls before attaching a DMX transmitter.
 
@@ -11,15 +11,15 @@ The target setup is an ESP32 DevKit V1 with 4 MB flash and an ADJ 64P LED PRO in
 | RGB conversion and DMX frame mapping | Covered by host-side C++ tests |
 | Homey SHS pairing and direct lamp controls | Verified with dry-run firmware |
 | Reconnection after an ESP32 restart | Verified with dry-run firmware |
-| Physical DMX output and Homey Flow actions | Pending hardware and Flow validation |
+| Physical DMX output and controller automations | Pending validation |
 
 ## 1. Gather the hardware
 
-Start with the ESP32 and a micro-USB data cable. Add the RS-485 transmitter after the Matter controls work in Homey.
+Start with the ESP32 and a micro-USB data cable. Add the RS-485 transmitter after confirming that your Matter controller can control the light.
 
 | Item | Model and details | Status |
 | --- | --- | --- |
-| Matter controller | Homey Self-Hosted Server | Tested with dry-run firmware |
+| Matter controller | A controller that supports Matter over Wi-Fi and Extended Color Lights | Dry-run tested with Homey Self-Hosted Server |
 | Development board | ESP32 DevKit V1, 30-pin board with ESP-WROOM-32 module, ESP32-D0WDQ6-V3 revision 3.0 and 4 MB flash | Identified and flashed |
 | USB serial | On-board Silicon Labs CP2102 and micro-USB data cable | Used for flashing and serial logs |
 | DMX fixture | American DJ 64P LED PRO with 3-pin XLR DMX IN (male) and DMX OUT (female) | Identified from the fixture label and rear panel |
@@ -74,15 +74,17 @@ Use your own serial port in place of the example. `idf.py flash` uses the genera
 
 If the flash tool cannot connect, close other serial monitors, check your USB cable and port permissions, and retry. If the board does not enter the bootloader automatically, hold **BOOT**, tap **EN**, and release **BOOT** before retrying.
 
-## 4. Pair and test in Homey
+## 4. Pair and test with a Matter controller
 
-1. Put Homey and the ESP32 on the same local network for the first test. The ESP32 needs 2.4 GHz Wi-Fi. Local IPv6 and multicast discovery must be available. Keep your phone close to the ESP32 for Bluetooth commissioning.
-2. In the Homey app, open **Devices**, choose **+**, then **New Device** and **Matter**. Follow the Matter setup prompts for your Homey and use the QR or manual code from the serial console. This is a development device with SDK test provisioning.
+1. Put your Matter controller and the ESP32 on the same local network for the first test. The ESP32 needs 2.4 GHz Wi-Fi. Local IPv6 and multicast discovery must be available. Keep your phone close to the ESP32 for Bluetooth commissioning.
+2. In your controller's app, choose the option to add a Matter device. Use the QR or manual code from the serial console. The firmware uses SDK test provisioning, and acceptance depends on the controller.
+
+   On Homey Self-Hosted Server, open **Devices → + → New Device → Matter** in the Homey mobile app.
 3. Switch the light on, dim it, and try red, green, blue and color temperature. Look for `RGB … (dry-run)` in the console. At full brightness the active channels should be near their maximum values. Turning the light off should produce `RGB 0 0 0 (dry-run)`.
-4. Reboot the board and verify that the existing Homey device reconnects in the off state. Turn it on again to confirm control.
-5. To check your own Homey Flow, create a manual Flow with the lamp's **Turn on** action, then run it and check the device tile and serial output. Direct controls and restart recovery passed in the original dry-run test. Flow execution still needs a recorded test.
+4. Reboot the board and verify that the existing Matter device reconnects in the off state. Turn it on again to confirm control.
+5. To test an automation, create a rule in your controller that turns the light on, then run it and check the device state and serial output.
 
-If pairing fails, check local discovery, 2.4 GHz Wi-Fi, and whether the device is already commissioned. For a deliberate fresh pairing, remove the device from Homey and use `matter esp factoryreset` in the serial shell. This erases saved Wi-Fi and Matter pairing data.
+If pairing fails, check local discovery, 2.4 GHz Wi-Fi, and whether the device is already commissioned. For a deliberate fresh pairing, remove the device from your Matter controller and use `matter esp factoryreset` in the serial shell. This erases saved Wi-Fi and Matter pairing data.
 
 ## 5. Add physical DMX
 
@@ -142,7 +144,7 @@ The firmware scales all three channels for brightness and approximates white col
      -DIDF_TARGET=esp32 -p "$port" flash monitor
    ```
 
-3. Check for `RGB … (UART)` when changing the light in Homey. Check the fixture against the same on/off, brightness and color tests from the dry run. Verify the transmitter and timing before relying on the physical output.
+3. Check for `RGB … (UART)` when changing the light through your Matter controller. Check the fixture against the same on/off, brightness and color tests from the dry run. Verify the transmitter and timing before relying on the physical output.
 4. If the console updates and the fixture stays dark, check the fixture mode and address, XLR pin numbering, data polarity, transmitter power and driver enable, and termination. If colors are crossed, test each RGB channel at full brightness and check the fixture is in three-channel mode.
 
 The firmware defaults are TX **GPIO17**, active-high driver enable **GPIO21**, and DMX address **1**. To change them, use `menuconfig` with the same hardware build and configuration options, then open **Studio Matter DMX**.
