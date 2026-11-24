@@ -1,0 +1,27 @@
+menu "Studio Matter DMX"
+    config STUDIO_DMX_OUTPUT
+        bool "Enable physical UART DMX output"
+        default n
+        help
+            Disabled by default: Matter works, RGB output is logged over USB.
+            Enable only with a verified isolated 3.3V-compatible DMX interface.
+
+    config STUDIO_DMX_START_ADDRESS
+        int "DMX start address (3-channel RGB fixture)"
+        range 1 510
+        default 1
+
+    config STUDIO_DMX_TX_GPIO
+        int "UART2 TX GPIO"
+        range 0 33
+        default 17
+        depends on STUDIO_DMX_OUTPUT
+        help
+            DevKit V1 TX2 is GPIO17. Do not select flash pins 6-11 or boot strap pins.
+
+    config STUDIO_DMX_ENABLE_GPIO
+        int "Active-high transmitter enable GPIO"
+        range 0 33
+        default 21
+        depends on STUDIO_DMX_OUTPUT
+endmenu

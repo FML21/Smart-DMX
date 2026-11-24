@@ -1,0 +1,30 @@
+# ESP-IDF generated files
+/firmware/matter-dmx/build*/
+/firmware/matter-dmx/sdkconfig
+/firmware/matter-dmx/sdkconfig.*
+!/firmware/matter-dmx/sdkconfig.defaults
+!/firmware/matter-dmx/sdkconfig.hardware
+/firmware/matter-dmx/managed_components/
+
+# Local artifacts and provisioning
+/artifacts/
+/backups/
+/logs/
+/releases/
+/tools/
+/WSL/
+provisioning-private/
+.env
+.env.*
+*.log
+*.pem
+*.key
+*.vhdx
+*.bin
+*.elf
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

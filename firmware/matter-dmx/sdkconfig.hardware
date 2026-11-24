@@ -1,0 +1,2 @@
+# Optional overlay; use a separate build directory/sdkconfig.
+CONFIG_STUDIO_DMX_OUTPUT=y

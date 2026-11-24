@@ -1,0 +1,52 @@
+name: Matter firmware
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mapping:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test actual firmware color and DMX mapping
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g firmware/matter-dmx/test/light_model_test.cpp -o /tmp/light-model-test
+          /tmp/light-model-test
+
+  firmware:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container: espressif/idf:v5.4.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Matter build prerequisites
+        shell: bash
+        run: |
+          apt-get update
+          apt-get install -y git build-essential pkg-config libssl-dev libdbus-1-dev libglib2.0-dev ninja-build unzip
+      - name: Prepare pinned ESP-Matter SDK
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          git clone --no-checkout https://github.com/espressif/esp-matter.git /opt/esp-matter
+          cd /opt/esp-matter
+          git checkout 4957e8331fbbed67d7b52010458fa59eab82a921
+          git submodule update --init --depth 1
+          cd connectedhomeip/connectedhomeip
+          ./scripts/checkout_submodules.py --platform esp32 linux --shallow
+          cd /opt/esp-matter
+          ./install.sh --no-host-tool
+      - name: Build dry-run and physical DMX variants
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          . /opt/esp-matter/export.sh
+          cd firmware/matter-dmx
+          idf.py -B build -DIDF_TARGET=esp32 build
+          idf.py -B build-hardware -DSDKCONFIG=sdkconfig.hardware.local -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.hardware" -DIDF_TARGET=esp32 build
